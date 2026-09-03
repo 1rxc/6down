@@ -118,6 +118,7 @@ def build_base_ydl_opts() -> Dict[str, Any]:
         'nocheckcertificate': True,
         'windowsfilenames': True,
         'socket_timeout': 30,
+        'js_runtimes': {'node': {}},
         'extractor_args': extractor_args,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
@@ -128,7 +129,13 @@ def build_base_ydl_opts() -> Dict[str, Any]:
     if FFMPEG_PATH:
         opts['ffmpeg_location'] = FFMPEG_PATH
 
-    cookie_file = COOKIES_PATH or str(BASE_DIR / "cookies.txt")
+    cookie_file = COOKIES_PATH
+    if not cookie_file or not os.path.exists(cookie_file):
+        for candidate in [BASE_DIR / "cookies" / "cookies.txt", BASE_DIR / "cookies.txt"]:
+            if candidate.exists():
+                cookie_file = str(candidate)
+                break
+
     if cookie_file and os.path.exists(cookie_file):
         opts['cookiefile'] = cookie_file
 
@@ -140,14 +147,20 @@ def build_base_ydl_opts() -> Dict[str, Any]:
 def execute_with_fallback(base_opts: Dict[str, Any], url: str, download: bool = False) -> Dict[str, Any]:
     strategies = []
 
+    # Strategy 1: Combined iOS & Android clients (Bypasses bot checks for BOTH standard & official music/VEVO videos)
     s1 = dict(base_opts)
-    s1['extractor_args'] = {'youtube': {'player_client': ['android']}}
+    s1['extractor_args'] = {
+        'youtube': {'player_client': ['ios', 'android']},
+        'youtubetab': {'skip': ['authcheck']}
+    }
     if download and 'format' in s1 and not s1['format'].endswith('/best'):
         s1['format'] = s1['format'] + '/best'
     strategies.append(s1)
 
+    # Strategy 2: Base options with cookies
     strategies.append(dict(base_opts))
 
+    # Strategy 3: Clean Request without cookies
     if base_opts.get('cookiefile'):
         s3 = dict(base_opts)
         s3.pop('cookiefile', None)
@@ -182,71 +195,71 @@ def extract_info(url: str) -> Dict[str, Any]:
         if not info:
             raise ValueError("Could not retrieve video information.")
 
-            formats = info.get('formats', [])
-            video_qualities = set()
-            
-            for f in formats:
-                vcodec = f.get('vcodec', 'none')
-                height = f.get('height')
-                if height and vcodec != 'none':
-                    video_qualities.add(height)
+        formats = info.get('formats', [])
+        video_qualities = set()
+        
+        for f in formats:
+            vcodec = f.get('vcodec', 'none')
+            height = f.get('height')
+            if height and vcodec != 'none':
+                video_qualities.add(height)
 
-            sorted_heights = sorted(list(video_qualities), reverse=True)
-            quality_map = {
-                2160: "4K Ultra HD (2160p)",
-                1440: "2K Quad HD (1440p)",
-                1080: "Full HD (1080p 60fps)",
-                720: "HD (720p)",
-                480: "SD (480p)",
-                360: "Standard (360p)",
-                240: "Low (240p)",
-                144: "Mobile (144p)"
-            }
-            
-            available_video = []
-            for h in sorted_heights:
-                available_video.append({
-                    "height": h,
-                    "label": quality_map.get(h, f"{h}p"),
-                    "format_id": f"bestvideo[height<={h}]+bestaudio/best[height<={h}]"
-                })
+        sorted_heights = sorted(list(video_qualities), reverse=True)
+        quality_map = {
+            2160: "4K Ultra HD (2160p)",
+            1440: "2K Quad HD (1440p)",
+            1080: "Full HD (1080p 60fps)",
+            720: "HD (720p)",
+            480: "SD (480p)",
+            360: "Standard (360p)",
+            240: "Low (240p)",
+            144: "Mobile (144p)"
+        }
+        
+        available_video = []
+        for h in sorted_heights:
+            available_video.append({
+                "height": h,
+                "label": quality_map.get(h, f"{h}p"),
+                "format_id": f"bestvideo[height<={h}]+bestaudio/best[height<={h}]"
+            })
 
-            if not available_video:
-                available_video.append({
-                    "height": 1080,
-                    "label": "Full HD (1080p 60fps)",
-                    "format_id": "bestvideo+bestaudio/best"
-                })
+        if not available_video:
+            available_video.append({
+                "height": 1080,
+                "label": "Full HD (1080p 60fps)",
+                "format_id": "bestvideo+bestaudio/best"
+            })
 
-            audio_presets = [
-                {"bitrate": "320", "format": "mp3", "label": "MP3 - 320 kbps (Studio Master)", "badge": "320k HQ"},
-                {"bitrate": "256", "format": "mp3", "label": "MP3 - 256 kbps (High Quality)", "badge": "256k HQ"},
-                {"bitrate": "192", "format": "mp3", "label": "MP3 - 192 kbps (Standard)", "badge": "192k"},
-                {"bitrate": "128", "format": "mp3", "label": "MP3 - 128 kbps (Fast)", "badge": "128k"},
-                {"bitrate": "0", "format": "m4a", "label": "M4A - Original AAC Stream", "badge": "AAC"},
-                {"bitrate": "0", "format": "wav", "label": "WAV - Lossless Uncompressed", "badge": "WAV"}
-            ]
+        audio_presets = [
+            {"bitrate": "320", "format": "mp3", "label": "MP3 - 320 kbps (Studio Master)", "badge": "320k HQ"},
+            {"bitrate": "256", "format": "mp3", "label": "MP3 - 256 kbps (High Quality)", "badge": "256k HQ"},
+            {"bitrate": "192", "format": "mp3", "label": "MP3 - 192 kbps (Standard)", "badge": "192k"},
+            {"bitrate": "128", "format": "mp3", "label": "MP3 - 128 kbps (Fast)", "badge": "128k"},
+            {"bitrate": "0", "format": "m4a", "label": "M4A - Original AAC Stream", "badge": "AAC"},
+            {"bitrate": "0", "format": "wav", "label": "WAV - Lossless Uncompressed", "badge": "WAV"}
+        ]
 
-            thumbnails = info.get('thumbnails', [])
-            best_thumb = info.get('thumbnail')
-            if thumbnails:
-                best_thumb = thumbnails[-1].get('url', best_thumb)
+        thumbnails = info.get('thumbnails', [])
+        best_thumb = info.get('thumbnail')
+        if thumbnails:
+            best_thumb = thumbnails[-1].get('url', best_thumb)
 
-            return {
-                "id": info.get('id'),
-                "url": url,
-                "title": info.get('title', 'YouTube Media'),
-                "uploader": info.get('uploader') or info.get('channel', 'Unknown Creator'),
-                "channel_url": info.get('uploader_url') or info.get('channel_url'),
-                "duration": info.get('duration', 0),
-                "duration_formatted": format_duration(info.get('duration')),
-                "view_count": f"{info.get('view_count', 0):,}" if info.get('view_count') else "0",
-                "thumbnail": best_thumb,
-                "description": (info.get('description') or "")[:250],
-                "video_formats": available_video,
-                "audio_formats": audio_presets,
-                "is_live": info.get('is_live', False)
-            }
+        return {
+            "id": info.get('id'),
+            "url": url,
+            "title": info.get('title', 'YouTube Media'),
+            "uploader": info.get('uploader') or info.get('channel', 'Unknown Creator'),
+            "channel_url": info.get('uploader_url') or info.get('channel_url'),
+            "duration": info.get('duration', 0),
+            "duration_formatted": format_duration(info.get('duration')),
+            "view_count": f"{info.get('view_count', 0):,}" if info.get('view_count') else "0",
+            "thumbnail": best_thumb,
+            "description": (info.get('description') or "")[:250],
+            "video_formats": available_video,
+            "audio_formats": audio_presets,
+            "is_live": info.get('is_live', False)
+        }
     except Exception as e:
         raise ValueError(clean_error_message(e))
 
