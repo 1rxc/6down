@@ -147,10 +147,10 @@ def build_base_ydl_opts() -> Dict[str, Any]:
 def execute_with_fallback(base_opts: Dict[str, Any], url: str, download: bool = False) -> Dict[str, Any]:
     strategies = []
 
-    # Strategy 1: Combined iOS & Android clients (Bypasses bot checks for BOTH standard & official music/VEVO videos)
+    # Strategy 1: visionos + android (Bypasses YouTube bot checks & provides full 1080p stream resolutions)
     s1 = dict(base_opts)
     s1['extractor_args'] = {
-        'youtube': {'player_client': ['ios', 'android']},
+        'youtube': {'player_client': ['visionos', 'android']},
         'youtubetab': {'skip': ['authcheck']}
     }
     if download and 'format' in s1 and not s1['format'].endswith('/best'):
@@ -160,11 +160,17 @@ def execute_with_fallback(base_opts: Dict[str, Any], url: str, download: bool = 
     # Strategy 2: Base options with cookies
     strategies.append(dict(base_opts))
 
-    # Strategy 3: Clean Request without cookies
+    # Strategy 3: Pure Android fallback
+    s3 = dict(base_opts)
+    s3.pop('cookiefile', None)
+    s3['extractor_args'] = {'youtube': {'player_client': ['android']}}
+    strategies.append(s3)
+
+    # Strategy 4: Clean Request without cookies
     if base_opts.get('cookiefile'):
-        s3 = dict(base_opts)
-        s3.pop('cookiefile', None)
-        strategies.append(s3)
+        s4 = dict(base_opts)
+        s4.pop('cookiefile', None)
+        strategies.append(s4)
 
     last_error = None
     for idx, opts in enumerate(strategies):
