@@ -137,6 +137,33 @@ def build_base_ydl_opts() -> Dict[str, Any]:
 
     return opts
 
+def execute_with_fallback(base_opts: Dict[str, Any], url: str, download: bool = False) -> Dict[str, Any]:
+    strategies = [dict(base_opts)]
+    if base_opts.get('cookiefile'):
+        s2 = dict(base_opts)
+        s2.pop('cookiefile', None)
+        strategies.append(s2)
+    s3 = dict(base_opts)
+    s3.pop('cookiefile', None)
+    s3['extractor_args'] = {'youtube': {'player_client': ['android', 'web']}}
+    strategies.append(s3)
+
+    last_error = None
+    for idx, opts in enumerate(strategies):
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(url, download=download)
+                if info:
+                    return info
+        except Exception as e:
+            last_error = e
+            logger.warning(f"Strategy {idx + 1} failed: {e}")
+            continue
+
+    if last_error:
+        raise last_error
+    raise ValueError("Could not extract video information.")
+
 def extract_info(url: str) -> Dict[str, Any]:
     url = normalize_youtube_url(url)
     ydl_opts = build_base_ydl_opts()
@@ -146,10 +173,9 @@ def extract_info(url: str) -> Dict[str, Any]:
     })
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            if not info:
-                raise ValueError("Could not retrieve video information.")
+        info = execute_with_fallback(ydl_opts, url, download=False)
+        if not info:
+            raise ValueError("Could not retrieve video information.")
 
             formats = info.get('formats', [])
             video_qualities = set()
@@ -333,11 +359,10 @@ def start_download_job(task_id: str, url: str, media_type: str, quality: str, au
                     }
                 ]
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                active_tasks[task_id]["status"] = "downloading"
-                info = ydl.extract_info(url, download=True)
-                raw_title = info.get('title', '6Down_Media')
-                active_tasks[task_id]["title"] = raw_title
+            active_tasks[task_id]["status"] = "downloading"
+            info = execute_with_fallback(ydl_opts, url, download=True)
+            raw_title = info.get('title', '6Down_Media')
+            active_tasks[task_id]["title"] = raw_title
 
             generated_files = [f for f in task_temp_dir.iterdir() if f.is_file() and not f.name.endswith(('.jpg', '.png', '.webp', '.part', '.ytdl'))]
             if not generated_files:
