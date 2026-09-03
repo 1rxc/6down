@@ -36,9 +36,12 @@ def normalize_youtube_url(url: str) -> str:
     if not url:
         return ""
     url = url.strip()
-    if "watch?v=" in url and "&list=" in url:
-        url = re.sub(r'&list=[^&]+', '', url)
-        url = re.sub(r'&index=[^&]+', '', url)
+    url = re.sub(r'[?&]list=[^&]+', '', url)
+    url = re.sub(r'[?&]index=[^&]+', '', url)
+    url = re.sub(r'[?&]start_radio=[^&]+', '', url)
+    url = re.sub(r'[?&]si=[^&]+', '', url)
+    url = re.sub(r'\?&', '?', url)
+    url = re.sub(r'\?$', '', url)
     return url
 
 def clean_error_message(err: Exception) -> str:
@@ -55,6 +58,7 @@ def clean_error_message(err: Exception) -> str:
         return "Filesystem path error. Please try again."
     msg = re.sub(r'^ERROR:\s*', '', msg)
     msg = re.sub(r'\[youtube\]\s*', '', msg)
+    msg = re.sub(r'\[youtube:tab\]\s*', '', msg)
     return msg[:200] if len(msg) > 200 else msg
 
 def sanitize_filename(name: str) -> str:
@@ -100,13 +104,21 @@ def cleanup_old_files():
         pass
 
 def build_base_ydl_opts() -> Dict[str, Any]:
+    extractor_args: Dict[str, Any] = {
+        'youtubetab': {'skip': ['authcheck']},
+    }
+    if PO_TOKEN:
+        extractor_args['youtube'] = {'po_token': [PO_TOKEN]}
+
     opts: Dict[str, Any] = {
         'quiet': True,
         'no_warnings': True,
         'cachedir': False,
+        'noplaylist': True,
         'nocheckcertificate': True,
         'windowsfilenames': True,
         'socket_timeout': 30,
+        'extractor_args': extractor_args,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -122,9 +134,6 @@ def build_base_ydl_opts() -> Dict[str, Any]:
 
     if PROXY_URL:
         opts['proxy'] = PROXY_URL
-
-    if PO_TOKEN:
-        opts['extractor_args'] = {'youtube': {'po_token': [PO_TOKEN]}}
 
     return opts
 
