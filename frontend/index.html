@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>6Down</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="spotlight" id="spotlight"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="app-container">
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-cube">
+          <span class="cube-glyph">6</span>
+        </div>
+        <div class="brand-info">
+          <span class="brand-name">6Down</span>
+          <span class="brand-tag">STUDIO</span>
+        </div>
+      </div>
+
+      <div class="nav-controls">
+        <div class="engine-pill">
+          <span class="pulse-dot"></span>
+          <span>Fast Engine</span>
+        </div>
+        <button id="historyBtn" class="btn-ghost" title="Download History">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="hero-block">
+        <h1 class="headline">Fast YouTube <span class="gradient-text">Converter</span></h1>
+        <p class="subtitle">Convert & download in pristine 4K 60FPS MP4 or Studio 320kbps MP3.</p>
+      </section>
+
+      <div class="input-card glow-card">
+        <div class="input-inner">
+          <div class="yt-badge">
+            <i class="fa-brands fa-youtube"></i>
+          </div>
+          <input 
+            type="text" 
+            id="videoUrlInput" 
+            placeholder="Paste YouTube video or Shorts link here..." 
+            autocomplete="off" 
+            spellcheck="false"
+          >
+          <div class="input-actions">
+            <button id="clearBtn" class="action-icon-btn" title="Clear" style="display:none;">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <button id="pasteBtn" class="btn-chip" title="Paste from clipboard">
+              <i class="fa-solid fa-clipboard"></i> <span>Paste</span>
+            </button>
+          </div>
+        </div>
+        
+        <button id="fetchBtn" class="btn-primary fetch-action-btn">
+          <span class="btn-text">Fetch</span>
+          <i class="fa-solid fa-arrow-right arrow-icon"></i>
+        </button>
+      </div>
+
+      <div id="statusToast" class="toast-card" style="display: none;">
+        <i class="fa-solid fa-circle-check toast-icon"></i>
+        <span id="toastMessage">Ready</span>
+      </div>
+
+      <div id="previewCard" class="glow-card preview-card" style="display: none;">
+        <div class="preview-grid">
+          <div class="thumb-wrapper">
+            <img id="videoThumb" src="" alt="Thumbnail" class="media-thumb">
+            <div class="thumb-gradient"></div>
+            <span id="videoDuration" class="duration-chip">00:00</span>
+            <div id="videoLiveBadge" class="live-chip" style="display: none;">
+              <span class="live-dot"></span> LIVE
+            </div>
+          </div>
+
+          <div class="controls-wrapper">
+            <div class="media-title-row">
+              <h2 id="videoTitle" class="video-title">Video Title</h2>
+              <div class="meta-row">
+                <span id="videoAuthor" class="author-tag"><i class="fa-solid fa-circle-user"></i> Channel</span>
+                <span id="videoViews" class="views-tag"><i class="fa-solid fa-eye"></i> 0 views</span>
+              </div>
+            </div>
+
+            <div class="mode-switch-track">
+              <div class="mode-indicator" id="modeIndicator"></div>
+              <button class="mode-tab active" data-mode="video">
+                <i class="fa-solid fa-video"></i> <span>MP4 Video</span>
+              </button>
+              <button class="mode-tab" data-mode="audio">
+                <i class="fa-solid fa-headphones"></i> <span>MP3 Audio</span>
+              </button>
+            </div>
+
+            <div class="quality-selector-row">
+              <span class="field-label">Target Quality:</span>
+              <div class="custom-select-wrap">
+                <select id="qualitySelect" class="quality-select"></select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+
+            <button id="startDownloadBtn" class="btn-primary download-action-btn">
+              <i class="fa-solid fa-arrow-down-to-line"></i>
+              <span id="downloadBtnText">Download MP4 (1080p)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="progressCard" class="glow-card progress-card" style="display: none;">
+        <div class="progress-top-row">
+          <div class="task-info">
+            <div class="badge-status-wrap">
+              <span class="status-pulse-dot"></span>
+              <span id="statStatusText" class="status-label">CONVERTING</span>
+            </div>
+            <h3 id="progressMediaTitle" class="task-media-title">Media Title</h3>
+          </div>
+          
+          <div class="percent-counter">
+            <span id="progressPercentNum" class="percent-val font-mono">0</span><span class="percent-sym">%</span>
+          </div>
+        </div>
+
+        <div class="progress-track">
+          <div id="progressBarFill" class="progress-fill" style="width: 0%;">
+            <div class="progress-glow-head"></div>
+            <div class="progress-shimmer"></div>
+          </div>
+        </div>
+
+        <div class="metric-tiles">
+          <div class="metric-card">
+            <span class="m-label">SPEED</span>
+            <span id="statSpeed" class="m-val font-mono">-- MB/s</span>
+          </div>
+          <div class="metric-card">
+            <span class="m-label">PROCESSED</span>
+            <span id="statSize" class="m-val font-mono">0 / 0 MB</span>
+          </div>
+          <div class="metric-card">
+            <span class="m-label">ETA</span>
+            <span id="statEta" class="m-val font-mono">--:--</span>
+          </div>
+        </div>
+
+        <div id="completedRow" class="completed-banner" style="display: none;">
+          <div class="ready-group">
+            <div class="check-bubble"><i class="fa-solid fa-check"></i></div>
+            <div>
+              <h4>Ready!</h4>
+              <p>Download started automatically.</p>
+            </div>
+          </div>
+          
+          <div class="completed-actions">
+            <a id="manualDownloadLink" href="#" class="btn-primary btn-sm" download>
+              <i class="fa-solid fa-download"></i> <span>Save Again</span>
+            </a>
+            <button id="resetBtn" class="btn-secondary btn-sm">
+              <i class="fa-solid fa-rotate-left"></i> <span>New Link</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="historyModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-dialog glow-card">
+        <div class="modal-header">
+          <div class="modal-title">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <h3>History</h3>
+          </div>
+          <button id="closeHistoryBtn" class="btn-icon-subtle"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="historyList" class="history-list"></div>
+        <div class="modal-footer">
+          <button id="clearHistoryBtn" class="btn-danger-subtle"><i class="fa-solid fa-trash-can"></i> Clear History</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <span>6Down Studio</span>
+        <span class="footer-dots">Have a good day!</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="js/app.js?v=2.1"></script>
+</body>
+</html>

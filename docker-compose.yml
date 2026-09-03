@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  downloader606:
+    build: .
+    container_name: 6down_studio
+    restart: unless-stopped
+    ports:
+      - "${PORT:-6060}:${PORT:-6060}"
+    environment:
+      - PORT=${PORT:-6060}
+      - HOST=0.0.0.0
+      - PROXY_URL=${PROXY_URL:-}
+      - COOKIES_PATH=/app/cookies/cookies.txt
+      - COOKIES_CONTENT=${COOKIES_CONTENT:-}
+      - PO_TOKEN=${PO_TOKEN:-}
+      - MAX_CONCURRENT_DOWNLOADS=${MAX_CONCURRENT_DOWNLOADS:-4}
+      - FILE_RETENTION_HOURS=${FILE_RETENTION_HOURS:-2}
+    volumes:
+      - ./downloads:/app/downloads
+      - ./cookies:/app/cookies

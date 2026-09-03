@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+temp/
+downloads/
+.env
+cloudflared.exe
+.vscode/
