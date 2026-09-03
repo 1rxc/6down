@@ -19,10 +19,7 @@ backend_path = current_dir / "backend"
 if str(backend_path) not in sys.path:
     sys.path.insert(0, str(backend_path))
 
-try:
-    from backend.config import HOST, PORT, APP_NAME
-except ImportError:
-    from config import HOST, PORT, APP_NAME
+from backend.config import HOST, PORT, APP_NAME
 
 def free_port(port: int):
     try:
