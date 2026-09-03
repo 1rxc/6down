@@ -15,13 +15,13 @@ if str(backend_path) not in sys.path:
 
 try:
     from config import (
-        FFMPEG_PATH, TEMP_DIR, DOWNLOADS_DIR,
+        BASE_DIR, FFMPEG_PATH, TEMP_DIR, DOWNLOADS_DIR,
         PROXY_URL, COOKIES_PATH, PO_TOKEN,
         MAX_CONCURRENT_DOWNLOADS, FILE_RETENTION_SECONDS
     )
 except ImportError:
     from backend.config import (
-        FFMPEG_PATH, TEMP_DIR, DOWNLOADS_DIR,
+        BASE_DIR, FFMPEG_PATH, TEMP_DIR, DOWNLOADS_DIR,
         PROXY_URL, COOKIES_PATH, PO_TOKEN,
         MAX_CONCURRENT_DOWNLOADS, FILE_RETENTION_SECONDS
     )
@@ -102,8 +102,7 @@ def cleanup_old_files():
 def build_base_ydl_opts() -> Dict[str, Any]:
     extractor_args: Dict[str, Any] = {
         'youtube': {
-            'player_client': ['android', 'ios', 'web'],
-            'player_skip': ['webpage', 'configs'],
+            'player_client': ['android', 'web'],
         }
     }
     if PO_TOKEN:
@@ -126,8 +125,9 @@ def build_base_ydl_opts() -> Dict[str, Any]:
     if FFMPEG_PATH:
         opts['ffmpeg_location'] = FFMPEG_PATH
 
-    if COOKIES_PATH and os.path.exists(COOKIES_PATH):
-        opts['cookiefile'] = COOKIES_PATH
+    cookie_file = COOKIES_PATH or str(BASE_DIR / "cookies.txt")
+    if cookie_file and os.path.exists(cookie_file):
+        opts['cookiefile'] = cookie_file
 
     if PROXY_URL:
         opts['proxy'] = PROXY_URL
