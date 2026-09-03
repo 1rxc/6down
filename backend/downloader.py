@@ -138,15 +138,20 @@ def build_base_ydl_opts() -> Dict[str, Any]:
     return opts
 
 def execute_with_fallback(base_opts: Dict[str, Any], url: str, download: bool = False) -> Dict[str, Any]:
-    strategies = [dict(base_opts)]
+    strategies = []
+
+    s1 = dict(base_opts)
+    s1['extractor_args'] = {'youtube': {'player_client': ['android']}}
+    if download and 'format' in s1 and not s1['format'].endswith('/best'):
+        s1['format'] = s1['format'] + '/best'
+    strategies.append(s1)
+
+    strategies.append(dict(base_opts))
+
     if base_opts.get('cookiefile'):
-        s2 = dict(base_opts)
-        s2.pop('cookiefile', None)
-        strategies.append(s2)
-    s3 = dict(base_opts)
-    s3.pop('cookiefile', None)
-    s3['extractor_args'] = {'youtube': {'player_client': ['android', 'web']}}
-    strategies.append(s3)
+        s3 = dict(base_opts)
+        s3.pop('cookiefile', None)
+        strategies.append(s3)
 
     last_error = None
     for idx, opts in enumerate(strategies):

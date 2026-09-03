@@ -30,10 +30,31 @@ else:
             break
 
 cookies_content = os.getenv("COOKIES_CONTENT", "").strip()
-if cookies_content and not COOKIES_PATH:
+if cookies_content:
+    if "\\n" in cookies_content and "\n" not in cookies_content:
+        cookies_content = cookies_content.replace("\\n", "\n")
+    if "\\t" in cookies_content and "\t" not in cookies_content:
+        cookies_content = cookies_content.replace("\\t", "\t")
+    
+    lines = []
+    for line in cookies_content.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            lines.append(line)
+            continue
+        parts = line.split("\t")
+        if len(parts) < 7:
+            parts = re.split(r'\s+', line, maxsplit=6)
+        if len(parts) == 7:
+            lines.append("\t".join(parts))
+        else:
+            lines.append(line)
+    
+    clean_text = "\n".join(lines) + "\n"
     env_cookie_file = TEMP_DIR / "env_cookies.txt"
     try:
-        env_cookie_file.write_text(cookies_content, encoding="utf-8")
+        TEMP_DIR.mkdir(parents=True, exist_ok=True)
+        env_cookie_file.write_text(clean_text, encoding="utf-8")
         COOKIES_PATH = str(env_cookie_file)
     except Exception:
         pass
