@@ -100,14 +100,6 @@ def cleanup_old_files():
         pass
 
 def build_base_ydl_opts() -> Dict[str, Any]:
-    extractor_args: Dict[str, Any] = {
-        'youtube': {
-            'player_client': ['android', 'web'],
-        }
-    }
-    if PO_TOKEN:
-        extractor_args['youtube']['po_token'] = [PO_TOKEN]
-
     opts: Dict[str, Any] = {
         'quiet': True,
         'no_warnings': True,
@@ -115,7 +107,6 @@ def build_base_ydl_opts() -> Dict[str, Any]:
         'nocheckcertificate': True,
         'windowsfilenames': True,
         'socket_timeout': 30,
-        'extractor_args': extractor_args,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -131,6 +122,9 @@ def build_base_ydl_opts() -> Dict[str, Any]:
 
     if PROXY_URL:
         opts['proxy'] = PROXY_URL
+
+    if PO_TOKEN:
+        opts['extractor_args'] = {'youtube': {'po_token': [PO_TOKEN]}}
 
     return opts
 
