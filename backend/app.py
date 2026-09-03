@@ -14,8 +14,16 @@ from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from config import HOST, PORT, APP_NAME, VERSION, FFMPEG_PATH, FRONTEND_DIR, DOWNLOADS_DIR
-from downloader import extract_info, start_download_job, active_tasks
+backend_path = Path(__file__).resolve().parent
+if str(backend_path) not in sys.path:
+    sys.path.insert(0, str(backend_path))
+
+try:
+    from config import HOST, PORT, APP_NAME, VERSION, FFMPEG_PATH, FRONTEND_DIR, DOWNLOADS_DIR
+    from downloader import extract_info, start_download_job, active_tasks
+except ImportError:
+    from backend.config import HOST, PORT, APP_NAME, VERSION, FFMPEG_PATH, FRONTEND_DIR, DOWNLOADS_DIR
+    from backend.downloader import extract_info, start_download_job, active_tasks
 
 app = FastAPI(title=APP_NAME, version=VERSION)
 

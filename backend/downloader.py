@@ -9,11 +9,22 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 import yt_dlp
 
-from config import (
-    FFMPEG_PATH, TEMP_DIR, DOWNLOADS_DIR,
-    PROXY_URL, COOKIES_PATH, PO_TOKEN,
-    MAX_CONCURRENT_DOWNLOADS, FILE_RETENTION_SECONDS
-)
+backend_path = Path(__file__).resolve().parent
+if str(backend_path) not in sys.path:
+    sys.path.insert(0, str(backend_path))
+
+try:
+    from config import (
+        FFMPEG_PATH, TEMP_DIR, DOWNLOADS_DIR,
+        PROXY_URL, COOKIES_PATH, PO_TOKEN,
+        MAX_CONCURRENT_DOWNLOADS, FILE_RETENTION_SECONDS
+    )
+except ImportError:
+    from backend.config import (
+        FFMPEG_PATH, TEMP_DIR, DOWNLOADS_DIR,
+        PROXY_URL, COOKIES_PATH, PO_TOKEN,
+        MAX_CONCURRENT_DOWNLOADS, FILE_RETENTION_SECONDS
+    )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("6DownEngine")

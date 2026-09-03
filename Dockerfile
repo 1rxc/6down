@@ -2,7 +2,8 @@ FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PORT=7860 \
+    PYTHONPATH=/app/backend:/app \
+    PORT=10000 \
     HOST=0.0.0.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -21,6 +22,6 @@ COPY . /app
 RUN mkdir -p /app/downloads /app/temp /app/cookies \
     && chmod -R 777 /app/downloads /app/temp /app/cookies
 
-EXPOSE 7860 6060
+EXPOSE 10000 7860 6060
 
-CMD ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port ${PORT:-7860}"]
+CMD ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port ${PORT:-10000}"]
